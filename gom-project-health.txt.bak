@@ -1,0 +1,51 @@
+
+
+
+mkdir gom-files
+cd gom-files/
+conda create --prefix=./env python=3.7
+touch  gom_project_health.py
+conda init bash                   { I only have to do this once - to initialize conda environment with bash}
+
+
+source  ~/.bashrc
+conda activate /data/hpcs/udmo/projects/gom-files/env
+
+(/data/hpcs/udmo/projects/gom-files/env) [uddinmm@admphou0001 gom-files]$ 
+
+(/data/hpcs/udmo/projects/gom-files/env) [uddinmm@admphou0001 gom-files]$ /data/hpcs/udmo/projects/gom-files/env/bin/python -V
+Python 3.7.11
+
+
+Caleb said that the "os" module is already loaded in conda ??
+
+------------------------------------------------------------------------------------------------------------------------
+
+\ls |while read d1 ; do echo ${d1} ; sleep 2 ; find ./${d1} -name "*.pet" -type f  ; sleep 10 ; done
+
+
+
+------------------------------------------------------------------------------------------------------------------------
+
+... 
+
+1) read in the files (recursively down the tree)
+
+2) search for <project_name>.pet    or    <project_name>.ptd
+
+3) if  <project_name>.pet &  <project_name>.ptd/  & <project_name>.ptd/Model.ptd  & <project_name>/Data.ptd   exists  ....>  good project!!
+
+4) any other case is a bad project:
+
+
+
+
+
+Project tuples ?
+
+( pro_root, pro_pet, pro_mod, pro_dat )
+
+
+
+
+

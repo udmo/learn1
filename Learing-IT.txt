@@ -1,0 +1,39 @@
+Thinks needed to study / Learn 
+
+AZ104 ... 
+
+
+
+- learn how to give feedback 
+
+
+
+- SAFe ... vids / notes again. 
+
+- python ... orielly site
+
+- splunk !!
+
+- ansible "roles" ...  in deep ansible !
+... modules for azure - https://docs.ansible.com/ansible/2.9/modules/list_of_cloud_modules.html
+
+
+- power shell 
+
+- containerization & kuberneties 
+
+- REST API -  website ... I have saved is good!
+
+- rhel 7 
+
+- software engineering ... skills   ...  fortran , c, c++
+.... understand code for G&G commumity ... how to migrate to cloud
+low level GPU programming ?
+
+
+- jypter notebook    - https://www.datacamp.com/community/tutorials/tutorial-jupyter-notebook
+- anaconda  (vitual env in python)  - https://www.datacamp.com/community/tutorials/virtual-environment-in-python
+
+
+Az-400  DevOps ... 
+https://docs.microsoft.com/en-us/learn/certifications/exams/az-400

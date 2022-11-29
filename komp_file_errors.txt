@@ -1,0 +1,20 @@
+
+sudo python CleanBadFDFiles.py -u https://134.248.168.51 -f /home/kompuser/komprise_tools/CleanBadFDFiles/file-ob1013 -d true
+
+
+/home/kompuser/komprise_tools/CleanBadFDFiles/file-ob1013
+
+
+sudo python CleanBadFDFiles.py -u <Director URL> -f <Input File> -d true
+
+sudo python CleanBadFDFiles.py -u https://kpdphou0001.gdc0.chevron.net -f /home/kompuser/komprise_tools/CleanBadFDFiles/file-ob1013 -d true
+
+
+sudo python CleanBadFDFiles.py -u https://134.248.168.51 -f /home/kompuser/komprise_tools/CleanBadFDFiles/file-ob1013 -d true
+sudo python CleanBadFDFiles.py -u https://134.248.168.51 -f /home/kompuser/komprise_tools/CleanBadFDFiles/file-ob1078 -d true
+
+
+sudo python CleanBadFDFiles.py -u https://134.248.168.51 -f /home/kompuser/komprise_tools/CleanBadFDFiles/file_1013-1078 -d true
+
+
+sudo python CleanBadFDFiles.py -u https://134.248.168.51 -f /home/kompuser/komprise_tools/CleanBadFDFiles/filenew -d true

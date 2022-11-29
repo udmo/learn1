@@ -1,0 +1,814 @@
+
+--------------------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------------------
+[user2@ip-10-221-4-223 ~]$ more pvc-basic.yaml
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: basic2-udmo
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      #      storage: 1Gi
+            storage: 10Gi
+  storageClassName: basic
+[user2@ip-10-221-4-223 ~]$
+--------------------------------------------------------------------------------------------------------------------------------
+[user2@ip-10-221-4-223 ~]$ more 4-filebrowser-basic.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: filebrowser-mohammed
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      webapp: netapp-filebrowser-mohammed
+      role: file-transfer-mohammed
+  template:
+    metadata:
+      labels:
+        webapp: netapp-filebrowser-mohammed
+        role: file-transfer-mohammed
+    spec:
+      containers:
+      - name: filebrowser #default login admin/admin
+        image: filebrowser/filebrowser
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: nfsvol 
+          mountPath: /srv
+      volumes:
+        - name: nfsvol
+          persistentVolumeClaim:
+            claimName: basic2-udmo
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: filebrowser-service-mohammed
+  labels:
+    webapp: netapp-filebrowser-mohammed
+    role: file-transfer-mohammed
+spec:
+  type: LoadBalancer
+  ports:
+   # The port that this service serves on.
+    - port: 80
+  # Label keys and values that must match in order to receive traffic for this service.
+  selector:
+    webapp: netapp-filebrowser-mohammed
+    role: file-transfer-mohammed
+[user2@ip-10-221-4-223 ~]$ 
+--------------------------------------------------------------------------------------------------------------------------------
+[user2@ip-10-221-4-223 ~]$ more pvc-clone-eg.yaml
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: basic-clone-udmo
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: basic
+  dataSource:
+    kind: PersistentVolumeClaim
+    name: basic2-udmo
+[user2@ip-10-221-4-223 ~]$ 
+
+
+--------------------------------------------------------------------------------------------------------------------------------
+[user2@ip-10-221-4-223 ~]$ more A-statedemo.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: web-mohammed
+spec:
+  serviceName: "nginx"
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx-mohammed
+  template:
+    metadata:
+      labels:
+        app: nginx-mohammed
+    spec:
+      containers:
+      - name: nginx
+        image: k8s.gcr.io/nginx-slim:0.8
+        ports:
+        - containerPort: 80
+          name: web
+        volumeMounts:
+        - name: basicclonevol-mohammed
+          mountPath: /usr/share/nginx/html
+  volumeClaimTemplates:
+  - metadata:
+      name: basicclonevol-mohammed
+        #      annotations:
+        # trident.netapp.io/cloneFromPVC: basic2
+    spec:
+      accessModes: [ "ReadWriteMany" ]
+      storageClassName: basic
+      resources:
+        requests:
+          storage: 10Gi
+
+
+
+
+--------------------------------------------------------------------------------------------------------------------------------
+Firetap ...
+
+with the purchase of "Element"
+
+Astra -- "VSA" ...
+
+
+
+
+--------------------------------------------------------------------------------------------------------------------------------
+
+
+[user2@ip-10-221-4-223 ~]$ kubectl describe pod
+Name:         nginx-deployment-mohammedu-646d5884c4-4c8qf
+Namespace:    default
+Priority:     0
+Node:         ip-10-221-4-157.ec2.internal/10.221.4.157
+Start Time:   Wed, 25 May 2022 18:54:42 +0000
+Labels:       SomeLabel=nginx-mohammedu
+              pod-template-hash=646d5884c4
+Annotations:  kubernetes.io/limit-ranger: LimitRanger plugin set: cpu request for container nginx
+Status:       Running
+IP:           100.96.5.16
+IPs:
+  IP:           100.96.5.16
+Controlled By:  ReplicaSet/nginx-deployment-mohammedu-646d5884c4
+Containers:
+  nginx:
+    Container ID:   containerd://ab8f48f94a50cd7ef99544c9851ca2fdf7fbe25f3f0fc040d0ff402817421612
+    Image:          nginx:1.21.6
+    Image ID:       docker.io/library/nginx@sha256:2d17cc4981bf1e22a87ef3b3dd20fbb72c3868738e3f307662eb40e2630d4320
+    Port:           80/TCP
+    Host Port:      0/TCP
+    State:          Running
+      Started:      Wed, 25 May 2022 18:54:43 +0000
+    Ready:          True
+    Restart Count:  0
+    Requests:
+      cpu:        100m
+    Environment:  <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from default-token-bbfp4 (ro)
+Conditions:
+  Type              Status
+  Initialized       True 
+  Ready             True 
+  ContainersReady   True 
+  PodScheduled      True 
+Volumes:
+  default-token-bbfp4:
+    Type:        Secret (a volume populated by a Secret)
+    SecretName:  default-token-bbfp4
+    Optional:    false
+QoS Class:       Burstable
+Node-Selectors:  <none>
+Tolerations:     node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                 node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:          <none>
+
+
+Name:         nginx-deployment-mohammedu-646d5884c4-8w7pk
+Namespace:    default
+Priority:     0
+
+
+--------------------------------------------------------------------------------------------------------------------------------
+storage: 
+
+[user2@ip-10-221-4-223 ~]$ kubectl get sc
+NAME                      PROVISIONER             RECLAIMPOLICY   VOLUMEBINDINGMODE      ALLOWVOLUMEEXPANSION   AGE
+basic                     csi.trident.netapp.io   Delete          Immediate              true                   144m
+default                   kubernetes.io/aws-ebs   Delete          Immediate              false                  2d21h
+gp2                       kubernetes.io/aws-ebs   Delete          Immediate              false                  2d21h
+kops-ssd-1-17 (default)   kubernetes.io/aws-ebs   Delete          WaitForFirstConsumer   true                   2d21h
+
+
+[user2@ip-10-221-4-223 ~]$ kubectl create -f pvc-basic.yaml -n mohammed
+persistentvolumeclaim/basic2-udmo created
+[user2@ip-10-221-4-223 ~]$ 
+
+
+[user2@ip-10-221-4-223 ~]$ kubectl get all -n mohammed 
+NAME                                              READY   STATUS    RESTARTS   AGE
+pod/apache-deployment-mohammedu-999d5b79b-22kg6   1/1     Running   0          140m
+pod/apache-deployment-mohammedu-999d5b79b-dn5kp   1/1     Running   0          140m
+pod/apache-deployment-mohammedu-999d5b79b-tp9rs   1/1     Running   0          140m
+pod/apache-deployment-mohammedu-999d5b79b-vnh48   1/1     Running   0          140m
+pod/fileb-deployment-mohammedu-5db95694b7-8nxnr   1/1     Running   0          118m
+pod/fileb-deployment-mohammedu-5db95694b7-j7vz7   1/1     Running   0          118m
+pod/fileb-deployment-mohammedu-5db95694b7-rfpsw   1/1     Running   0          118m
+pod/fileb-deployment-mohammedu-5db95694b7-w2cd7   1/1     Running   0          118m
+
+NAME                               TYPE           CLUSTER-IP      EXTERNAL-IP                                                               PORT(S)        AGE
+service/apache-service-mohammedu   LoadBalancer   100.71.71.202   a4462c1ce08014c95a68f8b0e1d75fdd-1429235382.us-east-1.elb.amazonaws.com   80:32461/TCP   132m
+
+NAME                                          READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/apache-deployment-mohammedu   4/4     4            4           140m
+deployment.apps/fileb-deployment-mohammedu    4/4     4            4           118m
+
+NAME                                                    DESIRED   CURRENT   READY   AGE
+replicaset.apps/apache-deployment-mohammedu-999d5b79b   4         4         4       140m
+replicaset.apps/fileb-deployment-mohammedu-5db95694b7   4         4         4       118m
+[user2@ip-10-221-4-223 ~]$ kubectl get pvc 
+NAME     STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+basic2   Bound    pvc-39c6473a-40d4-443a-bcc3-feaf85cebc7f   1Gi        RWX            basic          2m59s
+[user2@ip-10-221-4-223 ~]$ kubectl get pvc -n mohammed
+NAME          STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+basic2-udmo   Bound    pvc-2fa495af-6ad2-48c8-8ec3-a7ed663b40c0   1Gi        RWX            basic          112s
+[user2@ip-10-221-4-223 ~]$ 
+
+ 
+vi pvc-basic.yaml 
+
+ 
+
+[user2@ip-10-221-4-223 ~]$ kubectl apply -f pvc-basic.yaml -n mohammed
+Warning: resource persistentvolumeclaims/basic2-udmo is missing the kubectl.kubernetes.io/last-applied-configuration annotation which is required by kubectl apply. kubectl apply should only be used on resources created declaratively by either kubectl create --save-config or kubectl apply. The missing annotation will be patched automatically.
+persistentvolumeclaim/basic2-udmo configured
+[user2@ip-10-221-4-223 ~]$ kubectl get pvc -n mohammed
+NAME          STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+basic2-udmo   Bound    pvc-2fa495af-6ad2-48c8-8ec3-a7ed663b40c0   10Gi       RWX            basic          10m
+[user2@ip-10-221-4-223 ~]$ kubectl get pvc -n mohammed -o wide
+NAME          STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE   VOLUMEMODE
+basic2-udmo   Bound    pvc-2fa495af-6ad2-48c8-8ec3-a7ed663b40c0   10Gi       RWX            basic          10m   Filesystem
+[user2@ip-10-221-4-223 ~]$ 
+
+
+
+
+
+
+--------------------------------------------------------------------------------------------------------------------------------
+  sudo su -
+         ls
+         pwd
+         view k1.yaml 
+         vi k1.yaml 
+         vi k2.yaml
+         vi k1.yaml 
+         pwd
+         ls
+         more k1.yaml 
+         more k2.yaml 
+         more k1.yaml 
+         cd /etc/
+         cat os-release 
+         ps -ef |more 
+         ps -ef |grep 11
+         ps -ef |grep top
+         top
+         id
+         pwd
+         cd
+         pwd
+         vi k1.yaml
+         more k1
+         more k1.yaml 
+         vi k1.yaml
+         pwd
+         sudo curl -Lo kubectl http://storage.googleapis.com/kubernetes-release/release/v1.20.13/bin/linux/amd64/kubectl && chmod +x kubectl && sudo mv kubectl /usr/local/bin/
+         sudo curl -Lo kubectl http://storage.googleapis.com/kubernetes-release/release/v1.20.13/bin/linux/amd64/kubectl && sudo chmod +x kubectl && sudo mv kubectl /usr/local/bin/
+         pwd
+         cd
+         pwd
+         cd .kube
+         mkdir .kube
+         cd .kube/
+         cp /tmp/kubeconfig ./config
+         ls -al
+         pwd
+         more config 
+         cd
+         kubectl cluster-info
+         kubectl get nodes -o wide
+         kubectl get pods
+         ls
+         more k1.yaml 
+         vi k1.yaml 
+         kubectl create -f k1.yaml
+         kubectl get pods -o wide --watch
+         kubectl get deployments
+         kubectl get pods
+         kubectl explain deployment
+         kubectl explain deployment.spec
+         history 
+          kubectl create -f k1.yaml
+         kubectl apply -f k1.yaml
+         kubectl get pods
+         history 
+         history 
+         kubectl apply -f k1.yaml
+         kubectl get deployments
+         kubectl get pods
+          kubectl get pods -o wide
+          kubectl get deployments -o wide
+         kubectl apply -f k1.yaml
+          kubectl get deployments -o wide
+         kubectl create -f k2.yaml
+          kubectl get service -o wide
+         kubectl describe service nginx-service-mohammedu
+         kubectl get node -o wide
+         kubectl get nodes -o wide
+         curl http://100.96.4.16:31178
+         curl http://10.221.4.141:31178
+         kubectl apply -f k2.yaml
+         kubectl get service -o wide
+         history 
+         kubectl describe service nginx-service-mohammedu
+         kubectl get pods
+         kubectl get nodes
+         kubectl get nodes -o wide
+         kubectl get pods -o wide
+         kubectl get containers -o wide
+         kubectl get container -o wide
+         kubectl get container
+         kubectl describe pod nginx-deployment-mohammedu-646d5884c4-4c8qf
+         history 
+         kubectl describe pod nginx-deployment-mohammedu-646d5884c4-4c8qf
+         kubectl exec -ti nginx-deployment-mohammedu-646d5884c4-4c8qf -- /bin/bash
+         history 
+         kubectl create namespace mohammed
+         kubectl get namespace
+         kubectl create -f k1.yaml -n mohammed
+         kubectl get pod -n mohammed 
+         kubectl get all 
+         kubectl get all -n mohammed
+         kubectl cluster-info
+         kubectl describe cluster-info
+         kubectl get nodes 
+         kubectl get nodes -o wide
+         kubectl version
+         kubectl get nodes -o wide
+         kubectl get all 
+         kubectl get nodes -o wide
+         kubectl explain pods
+         kubectl explain pods.kind
+         kubectl explain deployments
+         kubectl explain deployment
+         kubectl explain deployment.kind
+         kubectl explain deployment.spec
+         kubectl explain deployment.spec.template
+         kubectl get deployment -o wide
+         kubectl get pods -o wide
+         kubectl get nodes -o wide
+         ifconfig -a
+         kubectl get all 
+         kubectl get all -n mohammedu
+         kubectl get all -n mohammed 
+         kubectl get all -n mohammed -o wid
+         kubectl get all -n mohammed -o wide
+         kubectl delete pod all -n mohammed
+         kubectl delete pod  -n mohammed
+         kubectl delete pod/nginx-deployment-mohammedu-646d5884c4-59sdp  -n mohammed
+         kubectl delete pod/nginx-deployment-mohammedu-646d5884c4-gld9l  -n mohammed
+         kubectl delete pod/nginx-deployment-mohammedu-646d5884c4-glx7c  -n mohammed
+         kubectl delete pod/nginx-deployment-mohammedu-646d5884c4-t45kc  -n mohammed
+         kubectl delete deployment.apps/nginx-deployment-mohammedu  -n mohammed
+         kubectl get all -n mohammed -o wide
+         more k1.yaml 
+         kubectl create namespace mohammed
+         kubectl get -n mohammed
+         kubectl get all -n mohammed
+
+         cp k1.yaml  k3.yaml
+         vi k3.yaml 
+         kubectl get deployment -n mohammed 
+         kubectl get deployment -n default
+
+         vi k3.yaml 
+         kubectl create -f  k3.yaml -n mohammed
+         vi k3.yaml 
+         kubectl create deployment -f  k3.yaml -n mohammed
+         kubectl create deployment  k3.yaml -n mohammed
+         vi k3.yaml 
+         kubectl create deployment -f k3.yaml -n mohammed
+         kubectl create -f k3.yaml -n mohammed
+         kubectl get delployment -n mohammed
+         kubectl get all -n mohammed
+         more k3.yaml 
+         kubectl create -f k3-load.yaml -n mohammed
+         kubectl get all -n mohammed
+         kubectl get deployment -n mohammed 
+         kubectl get deployment -n default
+
+         kubectl create -f  k3.yaml -n mohammed
+
+         kubectl create deployment -f  k3.yaml -n mohammed
+         kubectl create deployment  k3.yaml -n mohammed
+         vi k3.yaml 
+         kubectl create deployment -f k3.yaml -n mohammed
+         kubectl create -f k3.yaml -n mohammed
+         kubectl get delployment -n mohammed
+         kubectl get all -n mohammed
+         kubectl create -f k3-load.yaml -n mohammed
+         kubectl get all -n mohammed
+         kubectl get service -n mohammed
+         more k3-load.yaml 
+         kubectl get service -n mohammed -o wide
+         kubectl create -f k4.yaml -n mohammed
+         kubectl get all -n mohammed
+         kubectl describe service
+         kubectl describe service apache-service-mohammedu
+         kubectl describe service -n mohammed
+         kubectl describe service
+         kubectl describe service -n mohammed
+         kubectl get all -n mohammed
+         kubectl get service -n mohammed 
+         kubectl get service -n mohammed  |more
+         kubectl get service -n mohammed  |more
+         kubectl describe service -n mohammed  |more
+         kubectl get pod -n mohammed  |more
+         kubectl get pod -n mohammed  -o wide
+         kubectl get all -n mohammed  -o wide
+         kubectl apply -f k4.yaml -n mohammed
+         kubectl get all -n mohammed  -o wide
+         kubectl describe service -n mohammed 
+         kubectl get pods -o wide
+         kubectl get pods -o wide -n mohammed
+         kubectl appy k3-load.yaml -n mohammed
+         kubectl apply k3-load.yaml -n mohammed
+         kubectl apply -f k3-load.yaml -n mohammed
+         kubectl get pods -o wide -n mohammed
+         kubectl get all -o wide -n mohammed
+
+
+
+
+
+
+--------------------------------------------------------------------------------------------------------------------------------
+
+1. Deploy 4 APache httpd servers in your namespace at version 2.4
+2. stick a LoadBlancer in your namespace in front of them
+
+3. Deploy a second deployment using filebrowser/filebrowser app
+
+4. kick the existing loadblancer to point at the filebrowser/filebrowser pods
+
+
+
+[user2@ip-10-221-4-223 ~]$ kubectl describe service -n mohammed  |more
+Name:                     apache-service-mohammedu
+Namespace:                mohammed
+Labels:                   SomeOtherLabel=apache-mohammedu
+Annotations:              <none>
+Selector:                 SomeLabel=apache-mohammedu
+Type:                     LoadBalancer
+IP Families:              <none>
+IP:                       100.71.71.202
+IPs:                      100.71.71.202
+LoadBalancer Ingress:     a4462c1ce08014c95a68f8b0e1d75fdd-1429235382.us-east-1.elb.amazonaws.com
+Port:                     <unset>  80/TCP
+TargetPort:               80/TCP
+NodePort:                 <unset>  32461/TCP
+Endpoints:                100.96.1.40:80,100.96.2.40:80,100.96.3.37:80 + 1 more...
+Session Affinity:         None
+External Traffic Policy:  Cluster
+Events:
+  Type    Reason                Age   From                Message
+  ----    ------                ----  ----                -------
+  Normal  EnsuringLoadBalancer  25m   service-controller  Ensuring load balancer
+  Normal  EnsuredLoadBalancer   25m   service-controller  Ensured load balancer
+[user2@ip-10-221-4-223 ~]$ kubectl get pod -n mohammed  |more
+NAME                                          READY   STATUS    RESTARTS   AGE
+apache-deployment-mohammedu-999d5b79b-22kg6   1/1     Running   0          33m
+apache-deployment-mohammedu-999d5b79b-dn5kp   1/1     Running   0          33m
+apache-deployment-mohammedu-999d5b79b-tp9rs   1/1     Running   0          33m
+apache-deployment-mohammedu-999d5b79b-vnh48   1/1     Running   0          33m
+fileb-deployment-mohammedu-5db95694b7-8nxnr   1/1     Running   0          12m
+fileb-deployment-mohammedu-5db95694b7-j7vz7   1/1     Running   0          12m
+fileb-deployment-mohammedu-5db95694b7-rfpsw   1/1     Running   0          12m
+fileb-deployment-mohammedu-5db95694b7-w2cd7   1/1     Running   0          12m
+[user2@ip-10-221-4-223 ~]$ kubectl get pod -n mohammed  -o wide
+NAME                                          READY   STATUS    RESTARTS   AGE   IP            NODE                           NOMINATED NODE   READINESS GATES
+apache-deployment-mohammedu-999d5b79b-22kg6   1/1     Running   0          34m   100.96.2.40   ip-10-221-4-31.ec2.internal    <none>           <none>
+apache-deployment-mohammedu-999d5b79b-dn5kp   1/1     Running   0          34m   100.96.3.37   ip-10-221-4-141.ec2.internal   <none>           <none>
+apache-deployment-mohammedu-999d5b79b-tp9rs   1/1     Running   0          34m   100.96.1.40   ip-10-221-4-227.ec2.internal   <none>           <none>
+apache-deployment-mohammedu-999d5b79b-vnh48   1/1     Running   0          34m   100.96.6.37   ip-10-221-4-8.ec2.internal     <none>           <none>
+fileb-deployment-mohammedu-5db95694b7-8nxnr   1/1     Running   0          12m   100.96.2.45   ip-10-221-4-31.ec2.internal    <none>           <none>
+fileb-deployment-mohammedu-5db95694b7-j7vz7   1/1     Running   0          12m   100.96.6.42   ip-10-221-4-8.ec2.internal     <none>           <none>
+fileb-deployment-mohammedu-5db95694b7-rfpsw   1/1     Running   0          12m   100.96.3.41   ip-10-221-4-141.ec2.internal   <none>           <none>
+fileb-deployment-mohammedu-5db95694b7-w2cd7   1/1     Running   0          12m   100.96.4.34   ip-10-221-4-74.ec2.internal    <none>           <none>
+[user2@ip-10-221-4-223 ~]$ kubectl get all -n mohammed  -o wide
+NAME                                              READY   STATUS    RESTARTS   AGE   IP            NODE                           NOMINATED NODE   READINESS GATES
+pod/apache-deployment-mohammedu-999d5b79b-22kg6   1/1     Running   0          35m   100.96.2.40   ip-10-221-4-31.ec2.internal    <none>           <none>
+pod/apache-deployment-mohammedu-999d5b79b-dn5kp   1/1     Running   0          35m   100.96.3.37   ip-10-221-4-141.ec2.internal   <none>           <none>
+pod/apache-deployment-mohammedu-999d5b79b-tp9rs   1/1     Running   0          35m   100.96.1.40   ip-10-221-4-227.ec2.internal   <none>           <none>
+pod/apache-deployment-mohammedu-999d5b79b-vnh48   1/1     Running   0          35m   100.96.6.37   ip-10-221-4-8.ec2.internal     <none>           <none>
+pod/fileb-deployment-mohammedu-5db95694b7-8nxnr   1/1     Running   0          14m   100.96.2.45   ip-10-221-4-31.ec2.internal    <none>           <none>
+pod/fileb-deployment-mohammedu-5db95694b7-j7vz7   1/1     Running   0          14m   100.96.6.42   ip-10-221-4-8.ec2.internal     <none>           <none>
+pod/fileb-deployment-mohammedu-5db95694b7-rfpsw   1/1     Running   0          14m   100.96.3.41   ip-10-221-4-141.ec2.internal   <none>           <none>
+pod/fileb-deployment-mohammedu-5db95694b7-w2cd7   1/1     Running   0          14m   100.96.4.34   ip-10-221-4-74.ec2.internal    <none>           <none>
+
+NAME                               TYPE           CLUSTER-IP      EXTERNAL-IP                                                               PORT(S)        AGE   SELECTOR
+service/apache-service-mohammedu   LoadBalancer   100.71.71.202   a4462c1ce08014c95a68f8b0e1d75fdd-1429235382.us-east-1.elb.amazonaws.com   80:32461/TCP   28m   SomeLabel=apache-mohammedu
+
+NAME                                          READY   UP-TO-DATE   AVAILABLE   AGE   CONTAINERS   IMAGES                    SELECTOR
+deployment.apps/apache-deployment-mohammedu   4/4     4            4           35m   apache       httpd:2.4                 SomeLabel=apache-mohammedu
+deployment.apps/fileb-deployment-mohammedu    4/4     4            4           14m   fileb        filebrowser/filebrowser   SomeLabel=fileb-mohammedu
+
+NAME                                                    DESIRED   CURRENT   READY   AGE   CONTAINERS   IMAGES                    SELECTOR
+replicaset.apps/apache-deployment-mohammedu-999d5b79b   4         4         4       35m   apache       httpd:2.4                 SomeLabel=apache-mohammedu,pod-template-hash=999d5b79b
+replicaset.apps/fileb-deployment-mohammedu-5db95694b7   4         4         4       14m   fileb        filebrowser/filebrowser   SomeLabel=fileb-mohammedu,pod-template-hash=5db95694b7
+[user2@ip-10-221-4-223 ~]$ kubectl apply -f k4.yaml -n mohammed
+Warning: resource deployments/fileb-deployment-mohammedu is missing the kubectl.kubernetes.io/last-applied-configuration annotation which is required by kubectl apply. kubectl apply should only be used on resources created declaratively by either kubectl create --save-config or kubectl apply. The missing annotation will be patched automatically.
+deployment.apps/fileb-deployment-mohammedu configured
+[user2@ip-10-221-4-223 ~]$ 
+
+
+
+
+
+
+
+--------------------------------------------------------------------------------------------------------------------------------
+[user2@ip-10-221-4-223 ~]$ kubectl get nodes -o wide
+NAME                           STATUS   ROLES                  AGE    VERSION    INTERNAL-IP    EXTERNAL-IP      OS-IMAGE             KERNEL-VERSION    CONTAINER-RUNTIME
+ip-10-221-4-141.ec2.internal   Ready    node                   2d3h   v1.20.15   10.221.4.141   3.88.17.14       Ubuntu 20.04.4 LTS   5.13.0-1022-aws   containerd://1.4.4
+ip-10-221-4-157.ec2.internal   Ready    node                   2d3h   v1.20.15   10.221.4.157   54.167.223.113   Ubuntu 20.04.4 LTS   5.13.0-1022-aws   containerd://1.4.4
+ip-10-221-4-161.ec2.internal   Ready    control-plane,master   2d3h   v1.20.15   10.221.4.161   18.215.239.126   Ubuntu 20.04.4 LTS   5.13.0-1022-aws   containerd://1.4.4
+ip-10-221-4-227.ec2.internal   Ready    node                   2d3h   v1.20.15   10.221.4.227   54.159.117.190   Ubuntu 20.04.4 LTS   5.13.0-1022-aws   containerd://1.4.4
+ip-10-221-4-31.ec2.internal    Ready    node                   2d3h   v1.20.15   10.221.4.31    54.208.230.175   Ubuntu 20.04.4 LTS   5.13.0-1022-aws   containerd://1.4.4
+ip-10-221-4-74.ec2.internal    Ready    node                   2d3h   v1.20.15   10.221.4.74    54.81.147.143    Ubuntu 20.04.4 LTS   5.13.0-1022-aws   containerd://1.4.4
+ip-10-221-4-8.ec2.internal     Ready    node                   2d3h   v1.20.15   10.221.4.8     3.93.192.47      Ubuntu 20.04.4 LTS   5.13.0-1022-aws   containerd://1.4.4
+[user2@ip-10-221-4-223 ~]$ 
+
+
+"container runtime" is the container technology being used - docker in this case.
+
+
+
+
+
+
+
+--------------------------------------------------------------------------------------------------------------------------------
+storage 
+operators 
+
+
+
+--------------------------------------------------------------------------------------------------------------------------------
+
+"network service" is a load balancer  or  lack of it!!
+
+  49  history 
+   50  kubectl apply -f k1.yaml
+   51  kubectl get deployments
+   52  kubectl get pods
+   53   kubectl get pods -o wide
+   54   kubectl get deployments -o wide
+   55  kubectl apply -f k1.yaml
+   56   kubectl get deployments -o wide
+   57  kubectl create -f k2.yaml
+   58   kubectl get service -o wide
+   59  kubectl describe service nginx-service-mohammedu
+   60  kubectl get node -o wide
+   61  kubectl get nodes -o wide
+   62  curl http://100.96.4.16:31178
+   63  curl http://10.221.4.141:31178
+   64  kubectl apply -f k2.yaml
+   65  kubectl get service -o wide
+   66  history 
+[user2@ip-10-221-4-223 ~]$ kubectl describe service nginx-service-mohammedu
+Name:                     nginx-service-mohammedu
+Namespace:                default
+Labels:                   SomeOtherLabel=nginxservice-mohammedu
+Annotations:              <none>
+Selector:                 SomeLabel=nginx-mohammedu
+Type:                     LoadBalancer
+IP Families:              <none>
+IP:                       100.65.25.19
+IPs:                      100.65.25.19
+LoadBalancer Ingress:     a8b908ffa4c464ca5ab7f6fe7c1da0ea-1812947289.us-east-1.elb.amazonaws.com
+Port:                     <unset>  80/TCP
+TargetPort:               80/TCP
+NodePort:                 <unset>  31178/TCP
+Endpoints:                100.96.3.15:80,100.96.4.16:80,100.96.5.16:80 + 1 more...
+Session Affinity:         None
+External Traffic Policy:  Cluster
+Events:
+  Type    Reason                Age    From                Message
+  ----    ------                ----   ----                -------
+  Normal  Type                  4m17s  service-controller  NodePort -> LoadBalancer
+  Normal  EnsuringLoadBalancer  4m17s  service-controller  Ensuring load balancer
+  Normal  EnsuredLoadBalancer   4m14s  service-controller  Ensured load balancer
+[user2@ip-10-221-4-223 ~]$ 
+
+
+port forwarding ...
+
+load balancer without a loadbalancer - "headleass" 
+
+  59  kubectl describe service nginx-service-mohammedu
+
+   61  kubectl get nodes -o wide
+ 
+   63  curl http://10.221.4.141:31178
+   64  kubectl apply -f k2.yaml
+   65  kubectl get service -o wide
+
+   67  kubectl describe service nginx-service-mohammedu
+   68  kubectl get pods
+   69  kubectl get nodes
+   70  kubectl get nodes -o wide
+   71  kubectl get pods -o wide
+   75  kubectl describe pod nginx-deployment-mohammedu-646d5884c4-4c8qf
+   77  kubectl describe pod nginx-deployment-mohammedu-646d5884c4-4c8qf
+   78  kubectl exec -ti nginx-deployment-mohammedu-646d5884c4-4c8qf -- /bin/bash
+
+
+--------------------------------------------------------------------------------------------------------------------------------
+need to get  kubectl   (use the curl command below)
+need to get config 
+
+
+gitops ... 
+
+deployment is high availability  ... make sure that there is certain #
+
+sudo curl -Lo kubectl http://storage.googleapis.com/kubernetes-release/release/v1.20.13/bin/linux/amd64/kubectl && sudo chmod +x kubectl && sudo mv kubectl /usr/local/bin/
+
+   22  mkdir .kube
+   23  cd .kube/
+   24  cp /tmp/kubeconfig ./config       <---  kuberneties config file !!
+
+sudo curl -Lo kubectl http://storage.googleapis.com/kubernetes-release/release/v1.20.15/bin/linux/amd64/kubectl && sudo chmod +x kubectl && sudo mv kubectl /usr/local/bin/
+
+   29  kubectl cluster-info
+   30  kubectl get nodes -o wide
+   31  kubectl get pods
+
+   35  kubectl create -f k1.yaml
+   36  kubectl get pods -o wide --watch
+   
+   37  kubectl get deployments
+   38  kubectl get pods
+ 
+   41  kubectl explain deployment
+   42  kubectl explain deployment.spec
+
+   44  kubectl create -f k1.yaml   <--- create a new object
+   45  kubectl apply -f k1.yaml    <--- to make changes to existing object!!
+
+
+
+
+[user2@ip-10-221-4-223 ~]$ kubectl explain deployment.spec
+KIND:     Deployment
+VERSION:  apps/v1
+
+RESOURCE: spec <Object>
+
+DESCRIPTION:
+     Specification of the desired behavior of the Deployment.
+
+     DeploymentSpec is the specification of the desired behavior of the
+     Deployment.
+
+FIELDS:
+   minReadySeconds      <integer>
+     Minimum number of seconds for which a newly created pod should be ready
+     without any of its container crashing, for it to be considered available.
+     Defaults to 0 (pod will be considered available as soon as it is ready)
+
+   paused       <boolean>
+     Indicates that the deployment is paused.
+
+
+cloud controller ..   (cloud manager for the cloud)
+
+Different loadbalancers
+
+NodePort ... load balancer 
+LoadBalancer
+Cluster IP
+None
+
+
+--------------------------------------------------------------------------------------------------------------------------------
+docker hub 
+
+
+
+microsoft 
+FIO 
+
+
+rhel system  ... equivalent is "podman"
+
+
+
+kubelet 
+kubectl 
+
+POD is one or more containers ... has its own IP#
+
+Deployment is one or more PODs
+
+
+
+
+
+--------------------------------------------------------------------------------------------------------------------------------
+containers 
+
+container runtime environment  --  docker ... how to inteact with the OS
+
+
+...  each app can have it's own root   ...   
+- package has to be have is own userland 
+
+- put the "user land" into its own root ... redirect storage into a different mount point.
+
+Union FS    ....  lookup docker 
+
+
+docker.hub.com  --- default image repo
+
+
+mentioned  vagrant ... use ... oracle
+
+
+
+--------------------------------------------------------------------------------------------------------------------------------
+kuberneties is foundational technology:
+
+Edmond - 
+foundational training in kubernetes... 
+Brian our Trainer -- devops architect 
+
+- basic technologies included in Cloud 
+
+kuberneties can do everything ... ansible 
+declaritive
+
+IAAS
+PAAS
+
+Azure ARC --- uses kuberneties
+KAFKA connect 
+Apache SPARC
+
+To manage a kubernetes cluster:
+1) download kubectl
+2) you will need a kube config file to configure the cluster 
+
+
+# get the list of nodes in your cluster
+
+kubectl get nodes -o wide      
+
+
+# we can send commands to kubernetes via commandline but 
+# best practice is to use files so you can put them in a repo 
+# git hub ...  "GIT-OPS"  ?
+
+
+-- prometheus (good streaming & puts logs in promethus DB) and use grafana front end 
+   graphics/web monitoring
+
+
+
+# name space - multi tenency ... 
+# you can quota anything in the namespace 
+# create a namespace 
+
+kubectl create namespace mohammed
+
+# we could create our deployment in a namespace .... (isolate it from other namespaces)
+
+kubectol create -f file.yaml  -n mohammed
+
+
+
+--------------------------------------------------------------------------------------------------------------------------------
